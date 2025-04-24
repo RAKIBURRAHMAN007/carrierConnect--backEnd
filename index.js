@@ -27,6 +27,9 @@ async function run() {
     // await client.db("admin").command({ ping: 1 });
     const userCollection = client.db("carrierConnect").collection("users");
     const jobsCollection = client.db("carrierConnect").collection("jobs");
+    const appliedJobsCollection = client
+      .db("carrierConnect")
+      .collection("appliedJobs");
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
@@ -75,6 +78,47 @@ async function run() {
       const updatedDoc = { $set: req.body };
       const result = await jobsCollection.updateOne(query, updatedDoc);
       res.send(result);
+    });
+    // applied job application for hr
+    app.get("/appliedJobs/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { hrEmail: email };
+      const data = await appliedJobsCollection.find(query).toArray();
+      res.send(data);
+    });
+    app.get("/hr-stats/:email", async (req, res) => {
+      const email = req.params.email;
+
+      const totalApplicants = await appliedJobsCollection.countDocuments({
+        hrEmail: email,
+      });
+
+      const pendingApplicants = await appliedJobsCollection.countDocuments({
+        hrEmail: email,
+        status: "pending",
+      });
+
+      const acceptedApplicants = await appliedJobsCollection.countDocuments({
+        hrEmail: email,
+        status: "accepted",
+      });
+
+      const rejectedApplicants = await appliedJobsCollection.countDocuments({
+        hrEmail: email,
+        status: "rejected",
+      });
+
+      const totalPosts = await jobsCollection.countDocuments({
+        hrEmail: email,
+      });
+
+      res.send({
+        totalPosts,
+        totalApplicants,
+        pendingApplicants,
+        acceptedApplicants,
+        rejectedApplicants,
+      });
     });
   } finally {
     // Ensures that the client will close when you finish/error
