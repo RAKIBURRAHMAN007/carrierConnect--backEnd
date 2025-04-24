@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 require("dotenv").config();
 const port = process.env.PORT || 5000;
@@ -52,6 +52,28 @@ async function run() {
     app.post("/jobs", async (req, res) => {
       const data = req.body;
       const result = await jobsCollection.insertOne(data);
+      res.send(result);
+    });
+    // jobs by email
+    app.get("/jobs/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { hrEmail: email };
+      const data = await jobsCollection.find(query).toArray();
+      res.send(data);
+    });
+    // delete job by id
+    app.delete("/deleteJob/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await jobsCollection.deleteOne(query);
+      res.send(result);
+    });
+    // update job
+    app.patch("/updateJob/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updatedDoc = { $set: req.body };
+      const result = await jobsCollection.updateOne(query, updatedDoc);
       res.send(result);
     });
   } finally {
